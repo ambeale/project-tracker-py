@@ -70,7 +70,11 @@ def get_project_by_title(title):
 
     project_info = cursor.fetchone()
 
-    print("Project Title: {}\nProject Description: {}\nMax Grade: {}".format(project_info[0], project_info[1], project_info[2]))
+    output = "Project Title: {}\nProject Description: {}\nMax Grade: {}"
+
+    print(output.format(project_info[0], 
+                        project_info[1],
+                        project_info[2]))
 
 
 def get_grade_by_github_title(github, title):
@@ -98,18 +102,33 @@ def get_grade_by_github_title(github, title):
 def assign_grade(github, title, grade):
     """Assign a student a grade on an assignment and print a confirmation."""
     
-    sql = """
-        INSERT INTO grades (student_github, project_title, grade)
-        VALUES (:sgithub, :ptitle, :sgrade)
+    QUERY = """
+        SELECT max_grade
+        FROM projects
+        WHERE title = :gtitle
         """
 
-    db.session.execute(sql, { 'sgithub' : github,
-        'ptitle' : title,
-        'sgrade' : grade })
+    grade_cursor = db.session.execute(QUERY, { 'gtitle' : title })
 
-    db.session.commit()
+    max_grade = grade_cursor.fetchone()
+    max_grade = int(max_grade[0])
 
-    print("Grade for {} has been recorded.".format(title))
+    if int(grade) > max_grade:
+        print("Invalid grade. Max grade is {}".format(max_grade))
+
+    else:
+        sql = """
+            INSERT INTO grades (student_github, project_title, grade)
+            VALUES (:sgithub, :ptitle, :sgrade)
+            """
+
+        db.session.execute(sql, { 'sgithub' : github,
+            'ptitle' : title,
+            'sgrade' : grade })
+
+        db.session.commit()
+
+        print("Grade for {} has been recorded.".format(title))
 
 
 def handle_input():
